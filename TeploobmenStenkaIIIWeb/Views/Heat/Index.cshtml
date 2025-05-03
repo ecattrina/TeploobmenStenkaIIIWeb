@@ -1,0 +1,11 @@
+﻿@{
+    ViewData["Title"] = "Главная страница";
+}
+
+<h1>Добро пожаловать в калькулятор теплообмена</h1>
+<p>Выберите тип расчета:</p>
+
+<div>
+    <a asp-controller="Heat" asp-action="DirectProblem" class="btn btn-primary">Прямая задача</a>
+    <a asp-controller="Heat" asp-action="InverseProblem" class="btn btn-primary">Обратная задача</a>
+</div>
