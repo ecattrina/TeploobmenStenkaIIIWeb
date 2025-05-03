@@ -1,0 +1,97 @@
+﻿@model HeatTransferCalculator.Models.CalculationModel
+
+@{
+    ViewData["Title"] = "Результаты расчета";
+}
+
+<h2>Результаты расчета</h2>
+
+<div class="row">
+    <div class="col-md-6">
+        <h4>Исходные параметры</h4>
+        <dl class="row">
+            <dt class="col-sm-6">Толщина пластины:</dt>
+            <dd class="col-sm-6">@Model.Thickness м</dd>
+
+            <dt class="col-sm-6">Начальная температура:</dt>
+            <dd class="col-sm-6">@Model.InitialTemperature °C</dd>
+
+            <dt class="col-sm-6">Температура среды:</dt>
+            <dd class="col-sm-6">@Model.EnvironmentTemperature °C</dd>
+
+            @if (Model.Time.HasValue)
+            {
+                <dt class="col-sm-6">Время процесса:</dt>
+                <dd class="col-sm-6">@Model.Time.Value с</dd>
+            }
+
+            @if (Model.TargetTemperature.HasValue)
+            {
+                <dt class="col-sm-6">Целевая температура:</dt>
+                <dd class="col-sm-6">@Model.TargetTemperature.Value °C</dd>
+            }
+        </dl>
+    </div>
+
+    <div class="col-md-6">
+        <h4>Теплофизические свойства</h4>
+        <dl class="row">
+            <dt class="col-sm-6">Плотность:</dt>
+            <dd class="col-sm-6">@Model.Density кг/м³</dd>
+
+            <dt class="col-sm-6">Теплоемкость:</dt>
+            <dd class="col-sm-6">@Model.HeatCapacity Дж/(кг·К)</dd>
+
+            <dt class="col-sm-6">Теплопроводность:</dt>
+            <dd class="col-sm-6">@Model.ThermalConductivity Вт/(м·К)</dd>
+
+            <dt class="col-sm-6">Коэф. теплоотдачи:</dt>
+            <dd class="col-sm-6">@Model.HeatTransferCoefficient Вт/(м²·К)</dd>
+        </dl>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <h4>Результаты</h4>
+        <dl class="row">
+            <dt class="col-sm-4">Число Био (Bi):</dt>
+            <dd class="col-sm-8">@Model.BiotNumber.ToString("F4")</dd>
+
+            <dt class="col-sm-4">Число Фурье (Fo):</dt>
+            <dd class="col-sm-8">@Model.FourierNumber.ToString("F4")</dd>
+
+            <dt class="col-sm-4">Температура в центре:</dt>
+            <dd class="col-sm-8">@Model.CenterTemperature.ToString("F2") °C</dd>
+
+            <dt class="col-sm-4">Средняя температура:</dt>
+            <dd class="col-sm-8">@Model.AverageTemperature.ToString("F2") °C</dd>
+
+            <dt class="col-sm-4">Температура на поверхности:</dt>
+            <dd class="col-sm-8">@Model.SurfaceTemperature.ToString("F2") °C</dd>
+
+            @* @if (Model.Time.HasValue)
+            {
+                <dt class="col-sm-4">Время в формате Ч:М:С:</dt>
+                <dd class="col-sm-8">
+                    @{
+                        TimeSpan timeSpan = TimeSpan.FromSeconds(Model.Time.Value);
+                        @($"{timeSpan.Hours} ч {timeSpan.Minutes} мин {timeSpan.Seconds} сек")
+                    }
+                </dd>
+            } *@
+        </dl>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a asp-action="Index" class="btn btn-primary">На главную</a>
+    @if (Model.Time.HasValue)
+    {
+        <a asp-action="DirectProblem" class="btn btn-secondary">Новый расчет (прямая задача)</a>
+    }
+    else
+    {
+        <a asp-action="InverseProblem" class="btn btn-secondary">Новый расчет (обратная задача)</a>
+    }
+</div>

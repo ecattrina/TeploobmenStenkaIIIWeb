@@ -1,0 +1,77 @@
+﻿@model HeatTransferCalculator.Models.CalculationModel
+@{
+    ViewData["Title"] = "Результаты обратной задачи";
+}
+
+<h2>Результаты обратной задачи</h2>
+
+<div class="row">
+    <div class="col-md-6">
+        <h4>Исходные параметры</h4>
+        <dl class="row">
+            <dt class="col-sm-6">Толщина пластины:</dt>
+            <dd class="col-sm-6">@Model.Thickness м</dd>
+
+            <dt class="col-sm-6">Начальная температура:</dt>
+            <dd class="col-sm-6">@Model.InitialTemperature °C</dd>
+
+            <dt class="col-sm-6">Температура среды:</dt>
+            <dd class="col-sm-6">@Model.EnvironmentTemperature °C</dd>
+
+            @if (Model.TargetTemperature.HasValue)
+            {
+                <dt class="col-sm-6">Целевая температура:</dt>
+                <dd class="col-sm-6">@Model.TargetTemperature.Value °C</dd>
+            }
+        </dl>
+    </div>
+
+    <div class="col-md-6">
+        <h4>Теплофизические свойства</h4>
+        <dl class="row">
+            <dt class="col-sm-6">Плотность:</dt>
+            <dd class="col-sm-6">@Model.Density кг/м³</dd>
+
+            <dt class="col-sm-6">Теплоемкость:</dt>
+            <dd class="col-sm-6">@Model.HeatCapacity Дж/(кг·К)</dd>
+
+            <dt class="col-sm-6">Теплопроводность:</dt>
+            <dd class="col-sm-6">@Model.ThermalConductivity Вт/(м·К)</dd>
+
+            <dt class="col-sm-6">Коэф. теплоотдачи:</dt>
+            <dd class="col-sm-6">@Model.HeatTransferCoefficient Вт/(м²·К)</dd>
+        </dl>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <h4>Результаты расчетов</h4>
+        <dl class="row">
+          
+
+            <dt class="col-sm-4"> Число Био (Bi):</dt>
+            <dd class="col-sm-8">@Model.BiotNumber.ToString("0.00")</dd>
+
+            <dt class="col-sm-4"> Число Фурье (Fo):</dt>
+            <dd class="col-sm-8">@Model.FourierNumber.ToString("0.00")</dd>
+
+            <dt class="col-sm-4">Необходимое время (t):</dt>
+            <dd class="col-sm-8">
+                @if (Model.Time.HasValue)
+                {
+                    var ts = TimeSpan.FromSeconds(Model.Time.Value);
+                    @($"{ts.Hours} ч {ts.Minutes} мин")
+                }
+            </dd>
+        </dl>
+    </div>
+</div>
+
+
+<div class="mt-4">
+    <a asp-action="Index" class="btn btn-primary">На главную</a>
+   
+        <a asp-action="InverseProblem" class="btn btn-secondary">Новый расчет (обратная задача)</a>
+    
+</div>
