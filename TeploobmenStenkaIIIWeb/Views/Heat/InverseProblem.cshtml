@@ -7,6 +7,13 @@
 <h2>Обратная задача</h2>
 <p>Расчет времени достижения заданной температуры</p>
 
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger">
+        <strong>Ошибка:</strong> @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+    </div>
+}
+else{
 <form asp-action="InverseProblem" method="post">
     <div class="row">
         <div class="col-md-6">
@@ -74,7 +81,7 @@
         <a asp-action="Index" class="btn btn-secondary">Назад</a>
     </div>
 </form>
-
+}
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");

@@ -50,8 +50,11 @@ namespace TeploobmenStenkaIIIWeb.Services
         public BiotCoefficient GetCoefficients(double biValue)
         {// Округляем Bi до 2 знаков как в Excel
             biValue = Math.Round(biValue, 2);
+
+
             return _coefficients.FirstOrDefault(c => c.Bi == biValue)
                    ?? throw new Exception($"Коэффициенты для Bi={biValue} не найдены");
+
         }
     }
 }

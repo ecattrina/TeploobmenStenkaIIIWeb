@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using TeploobmenStenkaIIIWeb.Services;
 using System;
 using System.Linq;
+using System.ComponentModel.DataAnnotations;
 
 public class HeatController : Controller
 {
@@ -26,10 +27,12 @@ public class HeatController : Controller
     }
 
     [HttpPost]
-    [HttpPost]
     public IActionResult DirectProblem(CalculationModel model)
     {
-        if (!ModelState.IsValid) return View(model);
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
 
         try
         {
@@ -80,7 +83,17 @@ public class HeatController : Controller
                 (model.InitialTemperature - model.EnvironmentTemperature) * thetaSurface,
                 0);
 
-            return View("Result", model);
+
+            if (model.FourierNumber <= 0.3 ||
+            double.IsNaN(model.CenterTemperature) ||
+            double.IsNaN(model.AverageTemperature) ||
+            double.IsNaN(model.SurfaceTemperature))
+            {
+                ModelState.AddModelError("", "Ошибка: получены некорректные результаты расчета. Проверьте введенные параметры.");
+                return View(model);
+            }
+
+            return View("DirectResult", model);
         }
         catch (Exception ex)
         {
@@ -94,10 +107,14 @@ public class HeatController : Controller
     {
         return View(new CalculationModel());
     }
+
     [HttpPost]
     public IActionResult InverseProblem(CalculationModel model)
     {
-        if (!ModelState.IsValid) return View(model);
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
 
         try
         {
@@ -113,8 +130,8 @@ public class HeatController : Controller
             var coefficients = _excelService.GetCoefficients(model.BiotNumber);
 
             // 4. Расчет безразмерной температуры
-            double thetaCenter = (model.TargetTemperature.Value - model.EnvironmentTemperature) /
-                               (model.InitialTemperature - model.EnvironmentTemperature);
+            double thetaCenter = (model.EnvironmentTemperature - model.TargetTemperature.Value) /
+                               (model.EnvironmentTemperature - model.InitialTemperature);
 
             // 5. Расчет числа Фурье
             model.FourierNumber = Math.Round(
@@ -124,6 +141,21 @@ public class HeatController : Controller
             // 6. Расчет времени
             model.Time = (model.FourierNumber * Math.Pow(model.Thickness / 2, 2)) / a;
 
+            // Общая проверка на корректность времени
+            if (!model.Time.HasValue || double.IsNaN(model.Time.Value) || model.Time.Value <= 0)
+            {
+                throw new Exception("Получено некорректное значение времени. Проверьте введенные параметры.");
+            }
+
+            if (model.FourierNumber <= 0.3 ||
+            double.IsNaN(model.CenterTemperature) ||
+            double.IsNaN(model.AverageTemperature) ||
+            double.IsNaN(model.SurfaceTemperature))
+            {
+                ModelState.AddModelError("", "Ошибка: получены некорректные результаты расчета. Проверьте введенные параметры.");
+                return View(model);
+            }
+
             return View("InverseResult", model);
         }
         catch (Exception ex)
@@ -132,7 +164,7 @@ public class HeatController : Controller
             return View(model);
         }
     }
-    public IActionResult Result(CalculationModel model)
+    public IActionResult DirectResult(CalculationModel model)
     {
         return View(model);
     }

@@ -37,13 +37,14 @@ namespace HeatTransferCalculator.Models
         public double HeatTransferCoefficient { get; set; }  // Вт/(м²·К)
 
         // Параметры расчета
-        [Range(1, 100000, ErrorMessage = "Время должно быть от 1 до 100000 секунд")]
+       [Required(ErrorMessage = "Введите время процесса.")]
+[Range(0.0001, double.MaxValue, ErrorMessage = "Время должно быть больше нуля.")]
         public double? Time { get; set; }  // с
 
         [Required(ErrorMessage = "Поле обязательно для заполнения")]
         [Range(-273, 3000, ErrorMessage = "Недопустимое значение температуры")]
-        public double? TargetTemperature { get; set; }  // °C
-
+         public double? TargetTemperature { get; set; }  // °C
+    
         // Результаты
         public double CenterTemperature { get; set; }
         public double AverageTemperature { get; set; }
@@ -61,5 +62,7 @@ namespace HeatTransferCalculator.Models
                 return $"{ts.Hours} ч {ts.Minutes} мин";
             }
         }
+
+
     }
 }

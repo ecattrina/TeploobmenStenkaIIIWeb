@@ -1,0 +1,696 @@
+using HeatTransferCalculator.Models;
+using Microsoft.AspNetCore.Mvc;
+using TeploobmenStenkaIIIWeb.Services;
+using System;
+using System.Linq;
+using System.ComponentModel.DataAnnotations;
+
+public class HeatController : Controller
+{
+    private readonly ExcelBiotCoefficientService _excelService;
+
+    public HeatController(ExcelBiotCoefficientService excelService)
+    {
+        _excelService = excelService;
+    }
+
+    [HttpGet]
+    public IActionResult Index()
+    {
+        return View();
+    }
+
+    [HttpGet]
+    public IActionResult DirectProblem()
+    {
+        return View(new CalculationModel());
+    }
+
+    [HttpPost]
+    [HttpPost]
+    public IActionResult DirectProblem(CalculationModel model)
+    {
+        if (!ModelState.IsValid) return View(model);
+
+        try
+        {
+            // 1. Расчет коэффициента температуропроводности (как в Excel)
+            double a = Math.Round(
+                model.ThermalConductivity / (model.Density * model.HeatCapacity),
+                6); // 6 знаков после запятой
+
+            // 2. Расчет числа Био (как в Excel)
+            model.BiotNumber = Math.Round(
+                (model.HeatTransferCoefficient * (model.Thickness / 2)) / model.ThermalConductivity,
+                2); // 2 знака как в Excel
+
+            // 3. Получение коэффициентов (точное соответствие Excel)
+            var coefficients = _excelService.GetCoefficients(model.BiotNumber);
+
+            // 4. Расчет числа Фурье (как в Excel)
+            model.FourierNumber = Math.Round(
+                (a * model.Time.Value) / Math.Pow(model.Thickness / 2, 2),
+                2); // 2 знака как в Excel
+
+            // 5. Расчет безразмерных температур (формулы из Excel)
+            double thetaCenter = Math.Round(
+                coefficients.Np * Math.Exp(-coefficients.Mu1Squared * model.FourierNumber),
+                4);
+
+            double thetaAverage = Math.Round(
+                coefficients.M * Math.Exp(-coefficients.Mu1Squared * model.FourierNumber),
+                4);
+
+            double thetaSurface = Math.Round(
+                coefficients.Pp * Math.Exp(-coefficients.Mu1Squared * model.FourierNumber),
+                4);
+
+            // 6. Расчет температур (формулы и округление как в Excel)
+            model.CenterTemperature = Math.Round(
+                model.EnvironmentTemperature +
+                (model.InitialTemperature - model.EnvironmentTemperature) * thetaCenter,
+                0); // Округление до целых
+
+            model.AverageTemperature = Math.Round(
+                model.EnvironmentTemperature +
+                (model.InitialTemperature - model.EnvironmentTemperature) * thetaAverage,
+                0);
+
+            model.SurfaceTemperature = Math.Round(
+                model.EnvironmentTemperature +
+                (model.InitialTemperature - model.EnvironmentTemperature) * thetaSurface,
+                0);
+
+            return View("Result", model);
+        }
+        catch (Exception ex)
+        {
+            ModelState.AddModelError("", $"Ошибка расчета: {ex.Message}");
+            return View(model);
+        }
+    }
+
+    [HttpGet]
+    public IActionResult InverseProblem()
+    {
+        return View(new CalculationModel());
+    }
+    [HttpPost]
+    public IActionResult InverseProblem(CalculationModel model)
+    {
+        var validationResults = new List<ValidationResult>();
+        var validationContext = new ValidationContext(model);
+
+        if (!Validator.TryValidateObject(model, validationContext, validationResults, true) ||
+            !model.Validate(validationContext).Any())
+        {
+            foreach (var error in validationResults.Concat(model.Validate(validationContext)))
+            {
+                foreach (var memberName in error.MemberNames)
+                {
+                    ModelState.AddModelError(memberName, error.ErrorMessage);
+                }
+            }
+            return View(model);
+        }
+
+        try
+        {
+            // 1. Расчет коэффициента температуропроводности
+            double a = model.ThermalConductivity / (model.Density * model.HeatCapacity);
+
+            // 2. Расчет числа Био
+            model.BiotNumber = Math.Round(
+                (model.HeatTransferCoefficient * (model.Thickness / 2)) / model.ThermalConductivity,
+                2);
+
+            // 3. Получение коэффициентов
+            var coefficients = _excelService.GetCoefficients(model.BiotNumber);
+
+            // 4. Расчет безразмерной температуры
+            double thetaCenter = (model.TargetTemperature.Value - model.EnvironmentTemperature) /
+                               (model.InitialTemperature - model.EnvironmentTemperature);
+
+            // 5. Расчет числа Фурье
+            model.FourierNumber = Math.Round(
+                (1 / -coefficients.Mu1Squared) * Math.Log(thetaCenter / coefficients.Np),
+                2);
+
+            // 6. Расчет времени
+            model.Time = (model.FourierNumber * Math.Pow(model.Thickness / 2, 2)) / a;
+
+            return View("InverseResult", model);
+        }
+        catch (Exception ex)
+        {
+            ModelState.AddModelError("", $"Ошибка расчета: {ex.Message}");
+            return View(model);
+        }
+    }
+    public IActionResult Result(CalculationModel model)
+    {
+        return View(model);
+    }
+}
+namespace HeatTransferCalculator.Models
+{
+    public class BiotCoefficient
+    {
+        public int Id { get; set; }
+        public double Bi { get; set; }             // Число Био
+        public double Mu1 { get; set; }            // Первый корень
+        public double Mu1Squared { get; set; }     // Квадрат первого корня
+        public double Np { get; set; }             // Коэффициент N для центра
+        public double Pp { get; set; }             // Коэффициент P для поверхности
+        public double M { get; set; }              // Коэффициент M для средней температуры
+    }
+}
+using System.ComponentModel.DataAnnotations;
+
+namespace HeatTransferCalculator.Models
+{
+    public class CalculationModel
+
+
+    {
+        // Параметры пластины
+        [Required(ErrorMessage = "Поле обязательно для заполнения")]
+        [Range(0.01, 10.0, ErrorMessage = "Толщина должна быть от 0.01 до 10 м")]
+        public double Thickness { get; set; }  // м
+
+        [Required(ErrorMessage = "Поле обязательно для заполнения")]
+        [Range(-273, 3000, ErrorMessage = "Недопустимое значение температуры")]
+        public double InitialTemperature { get; set; }  // °C
+
+        [Required(ErrorMessage = "Поле обязательно для заполнения")]
+        [Range(-273, 3000, ErrorMessage = "Недопустимое значение температуры")]
+        public double EnvironmentTemperature { get; set; }  // °C
+
+        // Теплофизические свойства
+        [Required(ErrorMessage = "Поле обязательно для заполнения")]
+        [Range(1, 20000, ErrorMessage = "Плотность должна быть от 1 до 20000 кг/м³")]
+        public double Density { get; set; }  // кг/м³
+
+        [Required(ErrorMessage = "Поле обязательно для заполнения")]
+        [Range(100, 5000, ErrorMessage = "Теплоемкость должна быть от 100 до 5000 Дж/(кг·К)")]
+        public double HeatCapacity { get; set; }  // Дж/(кг·К)
+
+        [Required(ErrorMessage = "Поле обязательно для заполнения")]
+        [Range(0.1, 500, ErrorMessage = "Теплопроводность должна быть от 0.1 до 500 Вт/(м·К)")]
+        public double ThermalConductivity { get; set; }  // Вт/(м·К)
+
+        [Required(ErrorMessage = "Поле обязательно для заполнения")]
+        [Range(1, 1000, ErrorMessage = "Коэффициент теплоотдачи должен быть от 1 до 1000 Вт/(м²·К)")]
+        public double HeatTransferCoefficient { get; set; }  // Вт/(м²·К)
+
+        // Параметры расчета
+        [Range(1, 100000, ErrorMessage = "Время должно быть от 1 до 100000 секунд")]
+        public double? Time { get; set; }  // с
+
+        [Required(ErrorMessage = "Поле обязательно для заполнения")]
+        [Range(-273, 3000, ErrorMessage = "Недопустимое значение температуры")]
+        public double? TargetTemperature { get; set; }  // °C
+
+        // Результаты
+        public double CenterTemperature { get; set; }
+        public double AverageTemperature { get; set; }
+        public double SurfaceTemperature { get; set; }
+        public double FourierNumber { get; set; }
+        public double BiotNumber { get; set; }
+
+        public string FormattedThermalDiffusivity => (ThermalConductivity / (Density * HeatCapacity)).ToString("0.000E+00");
+        public string FormattedTime
+        {
+            get
+            {
+                if (!Time.HasValue) return "";
+                var ts = TimeSpan.FromSeconds(Time.Value);
+                return $"{ts.Hours} ч {ts.Minutes} мин";
+            }
+        }
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            // Проверка 1: Целевая температура должна быть между начальной и температурой среды
+            if (TargetTemperature.HasValue)
+            {
+                if (InitialTemperature > EnvironmentTemperature &&
+                    (TargetTemperature > InitialTemperature || TargetTemperature < EnvironmentTemperature))
+                {
+                    yield return new ValidationResult(
+                        "Целевая температура должна быть между начальной температурой и температурой среды",
+                        new[] { nameof(TargetTemperature) });
+                }
+
+                if (InitialTemperature < EnvironmentTemperature &&
+                    (TargetTemperature < InitialTemperature || TargetTemperature > EnvironmentTemperature))
+                {
+                    yield return new ValidationResult(
+                        "Целевая температура должна быть между начальной температурой и температурой среды",
+                        new[] { nameof(TargetTemperature) });
+                }
+            }
+
+            // Проверка 2: Температура среды не может быть равна начальной температуре
+            if (InitialTemperature == EnvironmentTemperature)
+            {
+                yield return new ValidationResult(
+                    "Температура среды не может быть равна начальной температуре тела",
+                    new[] { nameof(EnvironmentTemperature), nameof(InitialTemperature) });
+            }
+
+            // Проверка 3: Для нагрева целевая должна быть выше начальной
+            if (TargetTemperature.HasValue && EnvironmentTemperature > InitialTemperature &&
+                TargetTemperature <= InitialTemperature)
+            {
+                yield return new ValidationResult(
+                    "Для нагрева целевая температура должна быть выше начальной",
+                    new[] { nameof(TargetTemperature) });
+            }
+
+            // Проверка 4: Для охлаждения целевая должна быть ниже начальной
+            if (TargetTemperature.HasValue && EnvironmentTemperature < InitialTemperature &&
+                TargetTemperature >= InitialTemperature)
+            {
+                yield return new ValidationResult(
+                    "Для охлаждения целевая температура должна быть ниже начальной",
+                    new[] { nameof(TargetTemperature) });
+            }
+        }
+
+    }
+}
+
+namespace TeploobmenStenkaIIIWeb.Models
+{
+    public class ErrorViewModel
+    {
+        public string? RequestId { get; set; }
+
+        public bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
+    }
+}
+
+using HeatTransferCalculator.Models;
+using OfficeOpenXml;
+
+namespace TeploobmenStenkaIIIWeb.Services
+{
+    public class ExcelBiotCoefficientService
+    {
+        private readonly List<BiotCoefficient> _coefficients;
+
+        public ExcelBiotCoefficientService(IWebHostEnvironment env)
+        {
+            var filePath = Path.Combine(env.ContentRootPath, "Таблица.xlsx");
+
+            if (!File.Exists(filePath))
+                throw new FileNotFoundException($"Файл Excel не найден: {filePath}");
+
+            _coefficients = LoadCoefficients(filePath);
+        }
+
+        private List<BiotCoefficient> LoadCoefficients(string filePath)
+        {
+            using var package = new ExcelPackage(new FileInfo(filePath));
+            var worksheet = package.Workbook.Worksheets["ТАБЛИЦА"] ??
+                           throw new Exception("Лист 'ТАБЛИЦА' не найден");
+
+            var coefficients = new List<BiotCoefficient>();
+
+            for (int row = 5; row <= worksheet.Dimension.End.Row; row++)
+            {
+                // Проверяем, что строка не пустая
+                if (worksheet.Cells[row, 1].Value == null) continue;
+
+                coefficients.Add(new BiotCoefficient
+                {
+                    Bi = Convert.ToDouble(worksheet.Cells[row, 1].Value),
+                    Mu1 = Convert.ToDouble(worksheet.Cells[row, 2].Value),
+                    Mu1Squared = Convert.ToDouble(worksheet.Cells[row, 3].Value),
+                    Np = Convert.ToDouble(worksheet.Cells[row, 4].Value),
+                    Pp = Convert.ToDouble(worksheet.Cells[row, 5].Value),
+                    M = Convert.ToDouble(worksheet.Cells[row, 6].Value)
+                });
+            }
+
+            if (coefficients.Count == 0)
+                throw new Exception("Не удалось загрузить коэффициенты из Excel");
+
+            return coefficients;
+        }
+
+        public BiotCoefficient GetCoefficients(double biValue)
+        {// Округляем Bi до 2 знаков как в Excel
+            biValue = Math.Round(biValue, 2);
+
+
+            return _coefficients.FirstOrDefault(c => c.Bi == biValue)
+                   ?? throw new Exception($"Коэффициенты для Bi={biValue} не найдены");
+
+        }
+    }
+}
+@model HeatTransferCalculator.Models.CalculationModel
+
+@{
+    ViewData["Title"] = "Прямая задача";
+}
+
+<h2>Прямая задача</h2>
+<p>Расчет температуры в заданный момент времени</p>
+
+<form asp-action="DirectProblem" method="post">
+    <div class="row">
+        <div class="col-md-6">
+            <h4>Параметры пластины</h4>
+            <div class="form-group">
+                <label asp-for="Thickness" class="control-label">Толщина пластины (м)</label>
+                <input asp-for="Thickness" class="form-control" />
+                <span asp-validation-for="Thickness" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="InitialTemperature" class="control-label">Начальная температура (°C)</label>
+                <input asp-for="InitialTemperature" class="form-control" />
+                <span asp-validation-for="InitialTemperature" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="EnvironmentTemperature" class="control-label">Температура среды (°C)</label>
+                <input asp-for="EnvironmentTemperature" class="form-control" />
+                <span asp-validation-for="EnvironmentTemperature" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <h4>Теплофизические свойства</h4>
+            <div class="form-group">
+                <label asp-for="Density" class="control-label">Плотность (кг/м³)</label>
+                <input asp-for="Density" class="form-control" />
+                <span asp-validation-for="Density" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="HeatCapacity" class="control-label">Теплоемкость (Дж/(кг·К))</label>
+                <input asp-for="HeatCapacity" class="form-control" />
+                <span asp-validation-for="HeatCapacity" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="ThermalConductivity" class="control-label">Теплопроводность (Вт/(м·К))</label>
+                <input asp-for="ThermalConductivity" class="form-control" />
+                <span asp-validation-for="ThermalConductivity" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="HeatTransferCoefficient" class="control-label">Коэффициент теплоотдачи (Вт/(м²·К))</label>
+                <input asp-for="HeatTransferCoefficient" class="form-control" />
+                <span asp-validation-for="HeatTransferCoefficient" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-3">
+        <div class="col-md-6">
+            <h4>Параметры расчета</h4>
+            <div class="form-group">
+                <label asp-for="Time" class="control-label">Время процесса (с)</label>
+                <input asp-for="Time" class="form-control" />
+                <span asp-validation-for="Time" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group mt-4">
+        <button type="submit" class="btn btn-primary">Рассчитать</button>
+        <a asp-action="Index" class="btn btn-secondary">Назад</a>
+    </div>
+</form>
+@{
+    ViewData["Title"] = "Главная страница";
+}
+
+<h1>Добро пожаловать в калькулятор теплообмена</h1>
+<p>Выберите тип расчета:</p>
+
+<div>
+    <a asp-controller="Heat" asp-action="DirectProblem" class="btn btn-primary">Прямая задача</a>
+    <a asp-controller="Heat" asp-action="InverseProblem" class="btn btn-primary">Обратная задача</a>
+</div>
+@model HeatTransferCalculator.Models.CalculationModel
+
+@{
+    ViewData["Title"] = "Обратная задача";
+}
+
+<h2>Обратная задача</h2>
+<p>Расчет времени достижения заданной температуры</p>
+
+<form asp-action="InverseProblem" method="post">
+    <div class="row">
+        <div class="col-md-6">
+            <h4>Параметры пластины</h4>
+            <div class="form-group">
+                <label asp-for="Thickness" class="control-label">Толщина пластины (м)</label>
+                <input asp-for="Thickness" class="form-control" type="number" step="0.01" min="0.01" max="10" />
+                <span asp-validation-for="Thickness" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="InitialTemperature" class="control-label">Начальная температура (°C)</label>
+                <input asp-for="InitialTemperature" class="form-control" />
+                <span asp-validation-for="InitialTemperature" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="EnvironmentTemperature" class="control-label">Температура среды (°C)</label>
+                <input asp-for="EnvironmentTemperature" class="form-control" />
+                <span asp-validation-for="EnvironmentTemperature" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <h4>Теплофизические свойства</h4>
+            <div class="form-group">
+                <label asp-for="Density" class="control-label">Плотность (кг/м³)</label>
+                <input asp-for="Density" class="form-control" />
+                <span asp-validation-for="Density" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="HeatCapacity" class="control-label">Теплоемкость (Дж/(кг·К))</label>
+                <input asp-for="HeatCapacity" class="form-control" />
+                <span asp-validation-for="HeatCapacity" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="ThermalConductivity" class="control-label">Теплопроводность (Вт/(м·К))</label>
+                <input asp-for="ThermalConductivity" class="form-control" />
+                <span asp-validation-for="ThermalConductivity" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="HeatTransferCoefficient" class="control-label">Коэффициент теплоотдачи (Вт/(м²·К))</label>
+                <input asp-for="HeatTransferCoefficient" class="form-control" />
+                <span asp-validation-for="HeatTransferCoefficient" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-3">
+        <div class="col-md-6">
+            <h4>Параметры расчета</h4>
+            <div class="form-group">
+                <label asp-for="TargetTemperature" class="control-label">Целевая температура в центре (°C)</label>
+                <input asp-for="TargetTemperature" class="form-control" />
+                <span asp-validation-for="TargetTemperature" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group mt-4">
+        <button type="submit" class="btn btn-primary">Рассчитать</button>
+        <a asp-action="Index" class="btn btn-secondary">Назад</a>
+    </div>
+</form>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
+@model HeatTransferCalculator.Models.CalculationModel
+@{
+    ViewData["Title"] = "Результаты обратной задачи";
+}
+
+<h2>Результаты обратной задачи</h2>
+
+<div class="row">
+    <div class="col-md-6">
+        <h4>Исходные параметры</h4>
+        <dl class="row">
+            <dt class="col-sm-6">Толщина пластины:</dt>
+            <dd class="col-sm-6">@Model.Thickness м</dd>
+
+            <dt class="col-sm-6">Начальная температура:</dt>
+            <dd class="col-sm-6">@Model.InitialTemperature °C</dd>
+
+            <dt class="col-sm-6">Температура среды:</dt>
+            <dd class="col-sm-6">@Model.EnvironmentTemperature °C</dd>
+
+            @if (Model.TargetTemperature.HasValue)
+            {
+                <dt class="col-sm-6">Целевая температура:</dt>
+                <dd class="col-sm-6">@Model.TargetTemperature.Value °C</dd>
+            }
+        </dl>
+    </div>
+
+    <div class="col-md-6">
+        <h4>Теплофизические свойства</h4>
+        <dl class="row">
+            <dt class="col-sm-6">Плотность:</dt>
+            <dd class="col-sm-6">@Model.Density кг/м³</dd>
+
+            <dt class="col-sm-6">Теплоемкость:</dt>
+            <dd class="col-sm-6">@Model.HeatCapacity Дж/(кг·К)</dd>
+
+            <dt class="col-sm-6">Теплопроводность:</dt>
+            <dd class="col-sm-6">@Model.ThermalConductivity Вт/(м·К)</dd>
+
+            <dt class="col-sm-6">Коэф. теплоотдачи:</dt>
+            <dd class="col-sm-6">@Model.HeatTransferCoefficient Вт/(м²·К)</dd>
+        </dl>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <h4>Результаты расчетов</h4>
+        <dl class="row">
+          
+
+            <dt class="col-sm-4"> Число Био (Bi):</dt>
+            <dd class="col-sm-8">@Model.BiotNumber.ToString("0.00")</dd>
+
+            <dt class="col-sm-4"> Число Фурье (Fo):</dt>
+            <dd class="col-sm-8">@Model.FourierNumber.ToString("0.00")</dd>
+
+            <dt class="col-sm-4">Необходимое время (t):</dt>
+            <dd class="col-sm-8">
+                @if (Model.Time.HasValue)
+                {
+                    var ts = TimeSpan.FromSeconds(Model.Time.Value);
+                    @($"{ts.Hours} ч {ts.Minutes} мин")
+                }
+            </dd>
+        </dl>
+    </div>
+</div>
+
+
+<div class="mt-4">
+    <a asp-action="Index" class="btn btn-primary">На главную</a>
+   
+        <a asp-action="InverseProblem" class="btn btn-secondary">Новый расчет (обратная задача)</a>
+    
+</div>
+@model HeatTransferCalculator.Models.CalculationModel
+
+@{
+    ViewData["Title"] = "Результаты расчета";
+}
+
+<h2>Результаты расчета</h2>
+
+<div class="row">
+    <div class="col-md-6">
+        <h4>Исходные параметры</h4>
+        <dl class="row">
+            <dt class="col-sm-6">Толщина пластины:</dt>
+            <dd class="col-sm-6">@Model.Thickness м</dd>
+
+            <dt class="col-sm-6">Начальная температура:</dt>
+            <dd class="col-sm-6">@Model.InitialTemperature °C</dd>
+
+            <dt class="col-sm-6">Температура среды:</dt>
+            <dd class="col-sm-6">@Model.EnvironmentTemperature °C</dd>
+
+            @if (Model.Time.HasValue)
+            {
+                <dt class="col-sm-6">Время процесса:</dt>
+                <dd class="col-sm-6">@Model.Time.Value с</dd>
+            }
+
+            @if (Model.TargetTemperature.HasValue)
+            {
+                <dt class="col-sm-6">Целевая температура:</dt>
+                <dd class="col-sm-6">@Model.TargetTemperature.Value °C</dd>
+            }
+        </dl>
+    </div>
+
+    <div class="col-md-6">
+        <h4>Теплофизические свойства</h4>
+        <dl class="row">
+            <dt class="col-sm-6">Плотность:</dt>
+            <dd class="col-sm-6">@Model.Density кг/м³</dd>
+
+            <dt class="col-sm-6">Теплоемкость:</dt>
+            <dd class="col-sm-6">@Model.HeatCapacity Дж/(кг·К)</dd>
+
+            <dt class="col-sm-6">Теплопроводность:</dt>
+            <dd class="col-sm-6">@Model.ThermalConductivity Вт/(м·К)</dd>
+
+            <dt class="col-sm-6">Коэф. теплоотдачи:</dt>
+            <dd class="col-sm-6">@Model.HeatTransferCoefficient Вт/(м²·К)</dd>
+        </dl>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <h4>Результаты</h4>
+        <dl class="row">
+            <dt class="col-sm-4">Число Био (Bi):</dt>
+            <dd class="col-sm-8">@Model.BiotNumber.ToString("F4")</dd>
+
+            <dt class="col-sm-4">Число Фурье (Fo):</dt>
+            <dd class="col-sm-8">@Model.FourierNumber.ToString("F4")</dd>
+
+            <dt class="col-sm-4">Температура в центре:</dt>
+            <dd class="col-sm-8">@Model.CenterTemperature.ToString("F2") °C</dd>
+
+            <dt class="col-sm-4">Средняя температура:</dt>
+            <dd class="col-sm-8">@Model.AverageTemperature.ToString("F2") °C</dd>
+
+            <dt class="col-sm-4">Температура на поверхности:</dt>
+            <dd class="col-sm-8">@Model.SurfaceTemperature.ToString("F2") °C</dd>
+
+            @* @if (Model.Time.HasValue)
+            {
+                <dt class="col-sm-4">Время в формате Ч:М:С:</dt>
+                <dd class="col-sm-8">
+                    @{
+                        TimeSpan timeSpan = TimeSpan.FromSeconds(Model.Time.Value);
+                        @($"{timeSpan.Hours} ч {timeSpan.Minutes} мин {timeSpan.Seconds} сек")
+                    }
+                </dd>
+            } *@
+        </dl>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a asp-action="Index" class="btn btn-primary">На главную</a>
+    @if (Model.Time.HasValue)
+    {
+        <a asp-action="DirectProblem" class="btn btn-secondary">Новый расчет (прямая задача)</a>
+    }
+    else
+    {
+        <a asp-action="InverseProblem" class="btn btn-secondary">Новый расчет (обратная задача)</a>
+    }
+</div>

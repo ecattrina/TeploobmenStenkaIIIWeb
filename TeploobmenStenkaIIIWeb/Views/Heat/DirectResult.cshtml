@@ -1,13 +1,17 @@
 ﻿@model HeatTransferCalculator.Models.CalculationModel
+
 @{
-    ViewData["Title"] = "Результаты расчета";
+    ViewData["Title"] = "Результаты прямой задачи";
 }
 
-<h2>Результаты расчета</h2>
+<h2>Результаты прямой задачи</h2>
 
 <div asp-validation-summary="All" class="text-danger"></div>
 
-@if (Model.FourierNumber <= 0.3 || !Model.Time.HasValue || double.IsNaN(Model.Time.Value))
+@if (Model.FourierNumber <= 0 ||
+    double.IsNaN(Model.CenterTemperature) ||
+    double.IsNaN(Model.AverageTemperature) ||
+    double.IsNaN(Model.SurfaceTemperature))
 {
     <div class="alert alert-danger">
         <strong>Ошибка:</strong> Данные введены неверно. Проверьте введенные параметры.
@@ -32,12 +36,6 @@ else
                 {
                     <dt class="col-sm-6">Время процесса:</dt>
                     <dd class="col-sm-6">@Model.Time.Value с</dd>
-                }
-
-                @if (Model.TargetTemperature.HasValue)
-                {
-                    <dt class="col-sm-6">Целевая температура:</dt>
-                    <dd class="col-sm-6">@Model.TargetTemperature.Value °C</dd>
                 }
             </dl>
         </div>
@@ -70,14 +68,14 @@ else
                 <dt class="col-sm-4">Число Фурье (Fo):</dt>
                 <dd class="col-sm-8">@Model.FourierNumber.ToString("F4")</dd>
 
-                <dt class="col-sm-4">Время процесса:</dt>
-                <dd class="col-sm-8">
-                    @if (Model.Time.HasValue)
-                    {
-                        var ts = TimeSpan.FromSeconds(Model.Time.Value);
-                        @($"{ts.Hours} ч {ts.Minutes} мин")
-                    }
-                </dd>
+                <dt class="col-sm-4">Температура в центре:</dt>
+                <dd class="col-sm-8">@Model.CenterTemperature.ToString("F2") °C</dd>
+
+                <dt class="col-sm-4">Средняя температура:</dt>
+                <dd class="col-sm-8">@Model.AverageTemperature.ToString("F2") °C</dd>
+
+                <dt class="col-sm-4">Температура на поверхности:</dt>
+                <dd class="col-sm-8">@Model.SurfaceTemperature.ToString("F2") °C</dd>
             </dl>
         </div>
     </div>
@@ -85,7 +83,5 @@ else
 
 <div class="mt-4">
     <a asp-action="Index" class="btn btn-primary">На главную</a>
- 
-        <a asp-action="InverseProblem" class="btn btn-secondary">Новый расчет (обратная задача)</a>
-   
+    <a asp-action="DirectProblem" class="btn btn-secondary">Новый расчет</a>
 </div>
