@@ -1,4 +1,5 @@
-﻿@model HeatTransferCalculator.Models.CalculationModel
+﻿@using TeploobmenStenkaIIIWeb.Models.InputModels.Inverse
+@model InverseCalculationModel
 
 @{
     ViewData["Title"] = "Обратная задача";
@@ -72,6 +73,11 @@ else{
                 <label asp-for="TargetTemperature" class="control-label">Целевая температура в центре (°C)</label>
                 <input asp-for="TargetTemperature" class="form-control" />
                 <span asp-validation-for="TargetTemperature" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="TempPoints" class="control-label">Шаг температуры отображения (°C)</label>
+                <input asp-for="TempPoints" class="form-control" />
+                <span asp-validation-for="TempPoints" class="text-danger"></span>
             </div>
         </div>
     </div>

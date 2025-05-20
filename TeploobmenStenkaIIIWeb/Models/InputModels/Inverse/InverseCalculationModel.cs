@@ -1,10 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace HeatTransferCalculator.Models
+namespace TeploobmenStenkaIIIWeb.Models.InputModels.Inverse
 {
-    public class CalculationModel
-
-
+    public class InverseCalculationModel
     {
         // Параметры пластины
         [Required(ErrorMessage = "Поле обязательно для заполнения")]
@@ -37,18 +35,18 @@ namespace HeatTransferCalculator.Models
         public double HeatTransferCoefficient { get; set; }  // Вт/(м²·К)
 
         // Параметры расчета
-       [Required(ErrorMessage = "Введите время процесса.")]
-[Range(0.0001, double.MaxValue, ErrorMessage = "Время должно быть больше нуля.")]
-        public double? Time { get; set; }  // с
-
         [Required(ErrorMessage = "Поле обязательно для заполнения")]
         [Range(-273, 3000, ErrorMessage = "Недопустимое значение температуры")]
-         public double? TargetTemperature { get; set; }  // °C
-    
+        public double TargetTemperature { get; set; }  // °C
+
+        [Required(ErrorMessage = "Поле обязательно для заполнения")]
+        [Range(2, 10, ErrorMessage = "Допускается от 2 до 10 точек среза")]
+        public double TempPoints {  get; set; } 
+
         // Результаты
-        public double CenterTemperature { get; set; }
-        public double AverageTemperature { get; set; }
-        public double SurfaceTemperature { get; set; }
+
+        public List<InverseDiagramData> DiagramData { get; set; } = [];
+        public double Time { get; set; }  // с
         public double FourierNumber { get; set; }
         public double BiotNumber { get; set; }
 
@@ -57,12 +55,9 @@ namespace HeatTransferCalculator.Models
         {
             get
             {
-                if (!Time.HasValue) return "";
-                var ts = TimeSpan.FromSeconds(Time.Value);
+                var ts = TimeSpan.FromSeconds(Time);
                 return $"{ts.Hours} ч {ts.Minutes} мин";
             }
         }
-
-
     }
 }

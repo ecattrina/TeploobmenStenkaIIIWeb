@@ -8,7 +8,8 @@ ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
 // Добавление сервисов
 builder.Services.AddControllersWithViews();
-builder.Services.AddSingleton<ExcelBiotCoefficientService>();
+builder.Services.AddScoped<ExcelBiotCoefficientService>();
+builder.Services.AddDbContext<AppDbContext>();
 
 var app = builder.Build();
 

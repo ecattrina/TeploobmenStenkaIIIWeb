@@ -1,4 +1,5 @@
-﻿@model HeatTransferCalculator.Models.CalculationModel
+﻿@using TeploobmenStenkaIIIWeb.Models.InputModels.Inverse
+@model InverseCalculationModel
 @{
     ViewData["Title"] = "Результаты расчета";
 }
@@ -7,7 +8,7 @@
 
 <div asp-validation-summary="All" class="text-danger"></div>
 
-@if (Model.FourierNumber <= 0.3 || !Model.Time.HasValue || double.IsNaN(Model.Time.Value))
+@if (Model.FourierNumber <= 0.3 || double.IsNaN(Model.Time))
 {
     <div class="alert alert-danger">
         <strong>Ошибка:</strong> Данные введены неверно. Проверьте введенные параметры.
@@ -28,17 +29,8 @@ else
                 <dt class="col-sm-6">Температура среды:</dt>
                 <dd class="col-sm-6">@Model.EnvironmentTemperature °C</dd>
 
-                @if (Model.Time.HasValue)
-                {
-                    <dt class="col-sm-6">Время процесса:</dt>
-                    <dd class="col-sm-6">@Model.Time.Value с</dd>
-                }
-
-                @if (Model.TargetTemperature.HasValue)
-                {
-                    <dt class="col-sm-6">Целевая температура:</dt>
-                    <dd class="col-sm-6">@Model.TargetTemperature.Value °C</dd>
-                }
+                <dt class="col-sm-6">Целевая температура:</dt>
+                <dd class="col-sm-6">@Model.TargetTemperature °C</dd>
             </dl>
         </div>
 
@@ -72,13 +64,47 @@ else
 
                 <dt class="col-sm-4">Время процесса:</dt>
                 <dd class="col-sm-8">
-                    @if (Model.Time.HasValue)
-                    {
-                        var ts = TimeSpan.FromSeconds(Model.Time.Value);
+                    @{
+                        var ts = TimeSpan.FromSeconds(Model.Time);
                         @($"{ts.Hours} ч {ts.Minutes} мин")
                     }
                 </dd>
             </dl>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <h4>Диаграмма температур</h4>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Момент, с</th>
+                        <th>Температура в центре, °C</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var data in Model.DiagramData.Skip(1))
+                    {
+                        <tr>
+                            <td>
+                                @{
+                                    var momentTs = TimeSpan.FromSeconds(data.TimeStamp);
+                                    @($"{momentTs.Hours} ч {momentTs.Minutes} мин")
+                                }
+                            </td>
+                            <td>@data.CenterTemp.ToString("F2")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <h4>График зависимости температуры от времени</h4>
+            <canvas id="temperatureChart"></canvas>
         </div>
     </div>
 }
@@ -89,3 +115,57 @@ else
         <a asp-action="InverseProblem" class="btn btn-secondary">Новый расчет (обратная задача)</a>
    
 </div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const ctx = document.getElementById('temperatureChart').getContext('2d');
+            const data = @Html.Raw(Json.Serialize(Model.DiagramData.Skip(1).Select(d => new { 
+                time = d.TimeStamp,
+                temp = d.CenterTemp 
+            })));
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(d => {
+                        const hours = Math.floor(d.time / 3600);
+                        const minutes = Math.floor((d.time % 3600) / 60);
+                        return `${hours} ч ${minutes} мин`;
+                    }),
+                    datasets: [{
+                        label: 'Температура в центре, °C',
+                        data: data.map(d => d.temp),
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Зависимость температуры от времени'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Температура, °C'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Время'
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+}

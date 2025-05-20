@@ -1,4 +1,5 @@
-﻿@model HeatTransferCalculator.Models.CalculationModel
+﻿@using TeploobmenStenkaIIIWeb.Models.InputModels.Direct
+@model DirectCalculationModel
 
 @{
     ViewData["Title"] = "Прямая задача";
@@ -66,6 +67,11 @@
                 <label asp-for="Time" class="control-label">Время процесса (с)</label>
                 <input asp-for="Time" class="form-control" />
                 <span asp-validation-for="Time" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="TimeInterval" class="control-label">Временной интервал среза (с)</label>
+                <input asp-for="TimeInterval" class="form-control" />
+                <span asp-validation-for="TimeInterval" class="text-danger"></span>
             </div>
         </div>
     </div>

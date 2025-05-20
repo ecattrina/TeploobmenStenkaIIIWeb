@@ -1,4 +1,5 @@
-﻿@model HeatTransferCalculator.Models.CalculationModel
+﻿@using TeploobmenStenkaIIIWeb.Models.InputModels.Direct
+@model DirectCalculationModel
 
 @{
     ViewData["Title"] = "Результаты прямой задачи";
@@ -32,11 +33,8 @@ else
                 <dt class="col-sm-6">Температура среды:</dt>
                 <dd class="col-sm-6">@Model.EnvironmentTemperature °C</dd>
 
-                @if (Model.Time.HasValue)
-                {
-                    <dt class="col-sm-6">Время процесса:</dt>
-                    <dd class="col-sm-6">@Model.Time.Value с</dd>
-                }
+                <dt class="col-sm-6">Время процесса:</dt>
+                <dd class="col-sm-6">@Model.Time с</dd>
             </dl>
         </div>
 
@@ -79,9 +77,117 @@ else
             </dl>
         </div>
     </div>
+
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <h4>Диаграмма температур</h4>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Момент, с</th>
+                        <th>Температура в центре, °C</th>
+                        <th>Средняя температура, °C</th>
+                        <th>Температура на поверхности, °C</th>
+                        <th>Число Фурье (Fo)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var data in Model.DiagramData)
+                    {
+                        <tr>
+                            <td>@data.TimeStamp</td>
+                            <td>@data.CenterTemp.ToString("F2")</td>
+                            <td>@data.AverageTemp.ToString("F2")</td>
+                            <td>@data.SurfaceTemp.ToString("F2")</td>
+                            <td>@data.FourierNumber.ToString("F4")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <h4>График температур</h4>
+            <canvas id="temperatureChart"></canvas>
+        </div>
+    </div>
 }
 
 <div class="mt-4">
     <a asp-action="Index" class="btn btn-primary">На главную</a>
     <a asp-action="DirectProblem" class="btn btn-secondary">Новый расчет</a>
 </div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const ctx = document.getElementById('temperatureChart').getContext('2d');
+            const data = @Html.Raw(Json.Serialize(Model.DiagramData.Select(d => new { 
+                time = d.TimeStamp,
+                centerTemp = d.CenterTemp,
+                averageTemp = d.AverageTemp,
+                surfaceTemp = d.SurfaceTemp
+            })));
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(d => {
+                        const hours = Math.floor(d.time / 3600);
+                        const minutes = Math.floor((d.time % 3600) / 60);
+                        return `${hours} ч ${minutes} мин`;
+                    }),
+                    datasets: [
+                        {
+                            label: 'Температура в центре, °C',
+                            data: data.map(d => d.centerTemp),
+                            borderColor: 'rgb(75, 192, 192)',
+                            tension: 0.1,
+                            fill: false
+                        },
+                        {
+                            label: 'Средняя температура, °C',
+                            data: data.map(d => d.averageTemp),
+                            borderColor: 'rgb(255, 99, 132)',
+                            tension: 0.1,
+                            fill: false
+                        },
+                        {
+                            label: 'Температура на поверхности, °C',
+                            data: data.map(d => d.surfaceTemp),
+                            borderColor: 'rgb(54, 162, 235)',
+                            tension: 0.1,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Зависимость температур от времени'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Температура, °C'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Время'
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+}
