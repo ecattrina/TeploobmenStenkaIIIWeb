@@ -1,11 +1,60 @@
 ﻿@{
-    ViewData["Title"] = "Главная страница";
+    ViewData["Title"] = "Калькулятор теплообмена";
 }
 
-<h1>Добро пожаловать в калькулятор теплообмена</h1>
-<p>Выберите тип расчета:</p>
+<div class="container mt-5">
+    <div class="text-center">
+        <h1 class="display-4 mb-4">Калькулятор теплообмена</h1>
 
-<div>
-    <a asp-controller="Heat" asp-action="DirectProblem" class="btn btn-primary">Прямая задача</a>
-    <a asp-controller="Heat" asp-action="InverseProblem" class="btn btn-primary">Обратная задача</a>
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card shadow-lg mb-4">
+                    <div class="card-body p-5">
+                        <h3 class="card-title mb-4">Выберите тип расчета:</h3>
+
+                        <div class="d-grid gap-3">
+                            <a asp-controller="Heat" asp-action="DirectProblem"
+                               class="btn btn-primary btn-lg py-3 d-flex align-items-center justify-content-center">
+                                <i class="bi bi-calculator me-2"></i>Прямая задача
+                            </a>
+
+                            <a asp-controller="Heat" asp-action="InverseProblem"
+                               class="btn btn-primary btn-lg py-3 d-flex align-items-center justify-content-center">
+                                <i class="bi bi-graph-up-arrow me-2"></i>Обратная задача
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+            
+            </div>
+        </div>
+    </div>
 </div>
+
+<style>
+    body {
+        background-color: #f8f9fa;
+        font-family: 'Century Gothic', CenturyGothic, AppleGothic, sans-serif;
+    }
+
+    .card {
+        border-radius: 15px;
+        border: none;
+    }
+
+    .btn-lg {
+        font-weight: 500;
+        border-radius: 10px;
+        transition: all 0.3s;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #3a7bd5, #00d2ff);
+        border: none;
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #00d2ff, #3a7bd5);
+    }
+</style>

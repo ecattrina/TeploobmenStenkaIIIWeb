@@ -5,85 +5,124 @@
     ViewData["Title"] = "Прямая задача";
 }
 
-<h2>Прямая задача</h2>
+<div class="container mt-5">
+    <div class="text-center">
+        <h1 class="display-4 mb-4">Прямая задача</h1>
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card shadow-lg mb-4">
+                    <div class="card-body p-5">
+                        <form asp-action="DirectProblem" method="post">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h4>Параметры пластины</h4>
+                                    <div class="form-group">
+                                        <label asp-for="Thickness" class="control-label">Толщина пластины (м)</label>
+                                        <input asp-for="Thickness" class="form-control" type="number" step="0.01" min="0.01" max="10" />
+                                        <span asp-validation-for="Thickness" class="text-danger"></span>
+                                    </div>
 
+                                    <div class="form-group">
+                                        <label asp-for="InitialTemperature" class="control-label">Начальная температура (°C)</label>
+                                        <input asp-for="InitialTemperature" class="form-control" />
+                                        <span asp-validation-for="InitialTemperature" class="text-danger"></span>
+                                    </div>
 
+                                    <div class="form-group">
+                                        <label asp-for="EnvironmentTemperature" class="control-label">Температура среды (°C)</label>
+                                        <input asp-for="EnvironmentTemperature" class="form-control" />
+                                        <span asp-validation-for="EnvironmentTemperature" class="text-danger"></span>
+                                    </div>
+                                </div>
 
-<form asp-action="DirectProblem" method="post">
-    <div class="row">
-        <div class="col-md-6">
-            <h4>Параметры пластины</h4>
-            <div class="form-group">
-                <label asp-for="Thickness" class="control-label">Толщина пластины (м)</label>
-                <input asp-for="Thickness" class="form-control" type="number" step="0.01" min="0.01" max="10" />
-                <span asp-validation-for="Thickness" class="text-danger"></span>
-            </div>
+                                <div class="col-md-6">
+                                    <h4>Теплофизические свойства</h4>
+                                    <div class="form-group">
+                                        <label asp-for="Density" class="control-label">Плотность (кг/м³)</label>
+                                        <input asp-for="Density" class="form-control" />
+                                        <span asp-validation-for="Density" class="text-danger"></span>
+                                    </div>
 
-            <div class="form-group">
-                <label asp-for="InitialTemperature" class="control-label">Начальная температура (°C)</label>
-                <input asp-for="InitialTemperature" class="form-control" />
-                <span asp-validation-for="InitialTemperature" class="text-danger"></span>
-            </div>
+                                    <div class="form-group">
+                                        <label asp-for="HeatCapacity" class="control-label">Теплоемкость (Дж/(кг·К))</label>
+                                        <input asp-for="HeatCapacity" class="form-control" />
+                                        <span asp-validation-for="HeatCapacity" class="text-danger"></span>
+                                    </div>
 
-            <div class="form-group">
-                <label asp-for="EnvironmentTemperature" class="control-label">Температура среды (°C)</label>
-                <input asp-for="EnvironmentTemperature" class="form-control" />
-                <span asp-validation-for="EnvironmentTemperature" class="text-danger"></span>
-            </div>
-        </div>
+                                    <div class="form-group">
+                                        <label asp-for="ThermalConductivity" class="control-label">Теплопроводность (Вт/(м·К))</label>
+                                        <input asp-for="ThermalConductivity" class="form-control" />
+                                        <span asp-validation-for="ThermalConductivity" class="text-danger"></span>
+                                    </div>
 
-        <div class="col-md-6">
-            <h4>Теплофизические свойства</h4>
-            <div class="form-group">
-                <label asp-for="Density" class="control-label">Плотность (кг/м³)</label>
-                <input asp-for="Density" class="form-control" />
-                <span asp-validation-for="Density" class="text-danger"></span>
-            </div>
+                                    <div class="form-group">
+                                        <label asp-for="HeatTransferCoefficient" class="control-label">Коэффициент теплоотдачи (Вт/(м²·К))</label>
+                                        <input asp-for="HeatTransferCoefficient" class="form-control" />
+                                        <span asp-validation-for="HeatTransferCoefficient" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
 
-            <div class="form-group">
-                <label asp-for="HeatCapacity" class="control-label">Теплоемкость (Дж/(кг·К))</label>
-                <input asp-for="HeatCapacity" class="form-control" />
-                <span asp-validation-for="HeatCapacity" class="text-danger"></span>
-            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <h4>Параметры расчета</h4>
+                                    <div class="form-group">
+                                        <label asp-for="Time" class="control-label">Время процесса (с)</label>
+                                        <input asp-for="Time" class="form-control" />
+                                        <span asp-validation-for="Time" class="text-danger"></span>
+                                    </div>
+                                    <div class="form-group">
+                                        <label asp-for="TimeInterval" class="control-label">Временной интервал среза (с)</label>
+                                        <input asp-for="TimeInterval" class="form-control" />
+                                        <span asp-validation-for="TimeInterval" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
 
-            <div class="form-group">
-                <label asp-for="ThermalConductivity" class="control-label">Теплопроводность (Вт/(м·К))</label>
-                <input asp-for="ThermalConductivity" class="form-control" />
-                <span asp-validation-for="ThermalConductivity" class="text-danger"></span>
-            </div>
-
-            <div class="form-group">
-                <label asp-for="HeatTransferCoefficient" class="control-label">Коэффициент теплоотдачи (Вт/(м²·К))</label>
-                <input asp-for="HeatTransferCoefficient" class="form-control" />
-                <span asp-validation-for="HeatTransferCoefficient" class="text-danger"></span>
+                            <div class="form-group mt-4 d-flex gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg px-4">
+                                    <i class="bi bi-calculator me-2"></i>Рассчитать
+                                </button>
+                                <a asp-action="Index" class="btn btn-secondary btn-lg px-4">Назад</a>
+                            </div>
+                        </form>
+                    </div>
+                    
+                </div>
             </div>
         </div>
     </div>
-
-    <div class="row mt-3">
-        <div class="col-md-6">
-            <h4>Параметры расчета</h4>
-            <div class="form-group">
-                <label asp-for="Time" class="control-label">Время процесса (с)</label>
-                <input asp-for="Time" class="form-control" />
-                <span asp-validation-for="Time" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="TimeInterval" class="control-label">Временной интервал среза (с)</label>
-                <input asp-for="TimeInterval" class="form-control" />
-                <span asp-validation-for="TimeInterval" class="text-danger"></span>
-            </div>
-        </div>
-    </div>
-
-    <div class="form-group mt-4">
-        <button type="submit" class="btn btn-primary">Рассчитать</button>
-        <a asp-action="Index" class="btn btn-secondary">Назад</a>
-    </div>
-</form>
+</div>
 
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
 }
+
+<style>
+    body {
+        background-color: #f8f9fa;
+        font-family: 'Century Gothic', CenturyGothic, AppleGothic, sans-serif;
+    }
+
+    .card {
+        border-radius: 15px;
+        border: none;
+    }
+
+    .btn-lg {
+        font-weight: 500;
+        border-radius: 10px;
+        transition: all 0.3s;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #3a7bd5, #00d2ff);
+        border: none;
+    }
+
+    .btn-outline-primary:hover {
+        background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+    }
+</style>

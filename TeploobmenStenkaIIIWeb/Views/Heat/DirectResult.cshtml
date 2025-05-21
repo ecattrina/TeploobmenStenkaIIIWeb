@@ -5,119 +5,134 @@
     ViewData["Title"] = "Результаты прямой задачи";
 }
 
-<h2>Результаты прямой задачи</h2>
+<div class="container mt-5">
+    <div class="text-center">
+        <h1 class="display-4 mb-4">Результаты прямой задачи</h1>
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="card shadow-lg mb-4">
+                    <div class="card-body p-5">
+                        <div asp-validation-summary="All" class="text-danger"></div>
+                        @if (Model.FourierNumber <= 0 ||
+                            double.IsNaN(Model.CenterTemperature) ||
+                            double.IsNaN(Model.AverageTemperature) ||
+                            double.IsNaN(Model.SurfaceTemperature))
+                        {
+                            <div class="alert alert-danger d-flex align-items-center" role="alert">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                <div>
+                                    Введены некорректные параметры. Проверьте значения и попробуйте снова.
+                                </div>
+                            </div>
+                            <a asp-action="DirectProblem" class="btn btn-primary btn-lg mt-3">
+                                <i class="bi bi-arrow-left me-2"></i>Вернуться к расчету
+                            </a>
+                        }
+                        else
+                        {
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h4>Исходные параметры</h4>
+                                    <dl class="row">
+                                        <dt class="col-sm-6">Толщина пластины:</dt>
+                                        <dd class="col-sm-6">@Model.Thickness м</dd>
 
-<div asp-validation-summary="All" class="text-danger"></div>
+                                        <dt class="col-sm-6">Начальная температура:</dt>
+                                        <dd class="col-sm-6">@Model.InitialTemperature °C</dd>
 
-@if (Model.FourierNumber <= 0 ||
-    double.IsNaN(Model.CenterTemperature) ||
-    double.IsNaN(Model.AverageTemperature) ||
-    double.IsNaN(Model.SurfaceTemperature))
-{
-    <div class="alert alert-danger">
-        <strong>Ошибка:</strong> Данные введены неверно. Проверьте введенные параметры.
-    </div>
-}
-else
-{
-    <div class="row">
-        <div class="col-md-6">
-            <h4>Исходные параметры</h4>
-            <dl class="row">
-                <dt class="col-sm-6">Толщина пластины:</dt>
-                <dd class="col-sm-6">@Model.Thickness м</dd>
+                                        <dt class="col-sm-6">Температура среды:</dt>
+                                        <dd class="col-sm-6">@Model.EnvironmentTemperature °C</dd>
 
-                <dt class="col-sm-6">Начальная температура:</dt>
-                <dd class="col-sm-6">@Model.InitialTemperature °C</dd>
+                                        <dt class="col-sm-6">Время процесса:</dt>
+                                        <dd class="col-sm-6">@Model.Time с</dd>
+                                    </dl>
+                                </div>
 
-                <dt class="col-sm-6">Температура среды:</dt>
-                <dd class="col-sm-6">@Model.EnvironmentTemperature °C</dd>
+                                <div class="col-md-6">
+                                    <h4>Теплофизические свойства</h4>
+                                    <dl class="row">
+                                        <dt class="col-sm-6">Плотность:</dt>
+                                        <dd class="col-sm-6">@Model.Density кг/м³</dd>
 
-                <dt class="col-sm-6">Время процесса:</dt>
-                <dd class="col-sm-6">@Model.Time с</dd>
-            </dl>
+                                        <dt class="col-sm-6">Теплоемкость:</dt>
+                                        <dd class="col-sm-6">@Model.HeatCapacity Дж/(кг·К)</dd>
+
+                                        <dt class="col-sm-6">Теплопроводность:</dt>
+                                        <dd class="col-sm-6">@Model.ThermalConductivity Вт/(м·К)</dd>
+
+                                        <dt class="col-sm-6">Коэф. теплоотдачи:</dt>
+                                        <dd class="col-sm-6">@Model.HeatTransferCoefficient Вт/(м²·К)</dd>
+                                    </dl>
+                                </div>
+                            </div>
+
+                            <div class="row mt-4">
+                                <div class="col-md-12">
+                                    <h4>Результаты</h4>
+                                    <dl class="row">
+                                        <dt class="col-sm-4">Число Био (Bi):</dt>
+                                        <dd class="col-sm-8">@Model.BiotNumber.ToString("F4")</dd>
+
+                                        <dt class="col-sm-4">Число Фурье (Fo):</dt>
+                                        <dd class="col-sm-8">@Model.FourierNumber.ToString("F4")</dd>
+
+                                        <dt class="col-sm-4">Температура в центре:</dt>
+                                        <dd class="col-sm-8">@Model.CenterTemperature.ToString("F2") °C</dd>
+
+                                        <dt class="col-sm-4">Средняя температура:</dt>
+                                        <dd class="col-sm-8">@Model.AverageTemperature.ToString("F2") °C</dd>
+
+                                        <dt class="col-sm-4">Температура на поверхности:</dt>
+                                        <dd class="col-sm-8">@Model.SurfaceTemperature.ToString("F2") °C</dd>
+                                    </dl>
+                                </div>
+                            </div>
+
+                            <div class="row mt-4">
+                                <div class="col-md-12">
+                                    <h4>Диаграмма температур</h4>
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Момент, с</th>
+                                                <th>Температура в центре, °C</th>
+                                                <th>Средняя температура, °C</th>
+                                                <th>Температура на поверхности, °C</th>
+                                                <th>Число Фурье (Fo)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var data in Model.DiagramData)
+                                            {
+                                                <tr>
+                                                    <td>@data.TimeStamp</td>
+                                                    <td>@data.CenterTemp.ToString("F2")</td>
+                                                    <td>@data.AverageTemp.ToString("F2")</td>
+                                                    <td>@data.SurfaceTemp.ToString("F2")</td>
+                                                    <td>@data.FourierNumber.ToString("F4")</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="row mt-4">
+                                <div class="col-md-12">
+                                    <h4>График температур</h4>
+                                    <canvas id="temperatureChart"></canvas>
+                                </div>
+                            </div>
+                        }
+                        <div class="mt-4 d-flex gap-2">
+                            <a asp-action="Index" class="btn btn-primary btn-lg px-4"><i class="bi bi-house-door me-2"></i>На главную</a>
+                            <a asp-action="DirectProblem" class="btn btn-secondary btn-lg px-4">Новый расчет</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-
-        <div class="col-md-6">
-            <h4>Теплофизические свойства</h4>
-            <dl class="row">
-                <dt class="col-sm-6">Плотность:</dt>
-                <dd class="col-sm-6">@Model.Density кг/м³</dd>
-
-                <dt class="col-sm-6">Теплоемкость:</dt>
-                <dd class="col-sm-6">@Model.HeatCapacity Дж/(кг·К)</dd>
-
-                <dt class="col-sm-6">Теплопроводность:</dt>
-                <dd class="col-sm-6">@Model.ThermalConductivity Вт/(м·К)</dd>
-
-                <dt class="col-sm-6">Коэф. теплоотдачи:</dt>
-                <dd class="col-sm-6">@Model.HeatTransferCoefficient Вт/(м²·К)</dd>
-            </dl>
-        </div>
     </div>
-
-    <div class="row mt-4">
-        <div class="col-md-12">
-            <h4>Результаты</h4>
-            <dl class="row">
-                <dt class="col-sm-4">Число Био (Bi):</dt>
-                <dd class="col-sm-8">@Model.BiotNumber.ToString("F4")</dd>
-
-                <dt class="col-sm-4">Число Фурье (Fo):</dt>
-                <dd class="col-sm-8">@Model.FourierNumber.ToString("F4")</dd>
-
-                <dt class="col-sm-4">Температура в центре:</dt>
-                <dd class="col-sm-8">@Model.CenterTemperature.ToString("F2") °C</dd>
-
-                <dt class="col-sm-4">Средняя температура:</dt>
-                <dd class="col-sm-8">@Model.AverageTemperature.ToString("F2") °C</dd>
-
-                <dt class="col-sm-4">Температура на поверхности:</dt>
-                <dd class="col-sm-8">@Model.SurfaceTemperature.ToString("F2") °C</dd>
-            </dl>
-        </div>
-    </div>
-
-    <div class="row mt-4">
-        <div class="col-md-12">
-            <h4>Диаграмма температур</h4>
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Момент, с</th>
-                        <th>Температура в центре, °C</th>
-                        <th>Средняя температура, °C</th>
-                        <th>Температура на поверхности, °C</th>
-                        <th>Число Фурье (Fo)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var data in Model.DiagramData)
-                    {
-                        <tr>
-                            <td>@data.TimeStamp</td>
-                            <td>@data.CenterTemp.ToString("F2")</td>
-                            <td>@data.AverageTemp.ToString("F2")</td>
-                            <td>@data.SurfaceTemp.ToString("F2")</td>
-                            <td>@data.FourierNumber.ToString("F4")</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <div class="row mt-4">
-        <div class="col-md-12">
-            <h4>График температур</h4>
-            <canvas id="temperatureChart"></canvas>
-        </div>
-    </div>
-}
-
-<div class="mt-4">
-    <a asp-action="Index" class="btn btn-primary">На главную</a>
-    <a asp-action="DirectProblem" class="btn btn-secondary">Новый расчет</a>
 </div>
 
 @section Scripts {
@@ -191,3 +206,26 @@ else
         });
     </script>
 }
+
+<style>
+    body {
+        background-color: #f8f9fa;
+        font-family: 'Century Gothic', CenturyGothic, AppleGothic, sans-serif;
+    }
+    .card {
+        border-radius: 15px;
+        border: none;
+    }
+    .btn-lg {
+        font-weight: 500;
+        border-radius: 10px;
+        transition: all 0.3s;
+    }
+    .btn-primary {
+        background: linear-gradient(135deg, #3a7bd5, #00d2ff);
+        border: none;
+    }
+    .btn-outline-primary:hover {
+        background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+    }
+</style>

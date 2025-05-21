@@ -56,6 +56,8 @@ namespace TeploobmenStenkaIIIWeb.Models.InputModels.Direct
         public double FourierNumber { get; set; }
         public double BiotNumber { get; set; }
 
+        public string? WarningMessage { get; set; }
+
         public string FormattedThermalDiffusivity => (ThermalConductivity / (Density * HeatCapacity)).ToString("0.000E+00");
         public string FormattedTime
         {

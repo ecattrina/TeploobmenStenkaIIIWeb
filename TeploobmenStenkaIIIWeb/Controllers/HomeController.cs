@@ -37,24 +37,24 @@ public class HeatController : Controller
         var minTimeInterval = model.MinTimeInterval;
         var desiredTimeInterval = model.TimeInterval;
 
-        // зациклить с шагом по времени и сделать диаграммы
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         if (!ModelState.IsValid 
             || desiredTimeInterval < minTimeInterval
             || desiredTimeInterval > endTimeSeconds)
         {
             return View(model);
         }
-        // 1. Расчет коэффициента температуропроводности (как в Excel)
+        // 1. пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅ пїЅ Excel)
         double a = Math.Round(
             model.ThermalConductivity / (model.Density * model.HeatCapacity),
-            6); // 6 знаков после запятой
+            6); // 6 пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 
-        // 2. Расчет числа Био (как в Excel)
+        // 2. пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ (пїЅпїЅпїЅ пїЅ Excel)
         model.BiotNumber = Math.Round(
             (model.HeatTransferCoefficient * (model.Thickness / 2)) / model.ThermalConductivity,
-            2); // 2 знака как в Excel
+            2); // 2 пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅ Excel
 
-        // 3. Получение коэффициентов (точное соответствие Excel)
+        // 3. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ Excel)
         var coefficients = await _dbAccessService.GetCoefficients(model.BiotNumber);
 
         var timeEllapsed = 0.0;
@@ -81,7 +81,7 @@ public class HeatController : Controller
                 || double.IsNaN(model.AverageTemperature)
                 || double.IsNaN(model.SurfaceTemperature))
         {
-            ModelState.AddModelError("", "Ошибка: получены некорректные результаты расчета. Проверьте введенные параметры.");
+            ModelState.AddModelError("", "пїЅпїЅпїЅпїЅпїЅпїЅ: пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.");
             return View(model);
         }
 
@@ -92,12 +92,12 @@ public class HeatController : Controller
         DirectCalculationModel model, double a, 
         BioCoeff coefficients, double timeEllapsed)
     {
-        // 4. Расчет числа Фурье (как в Excel)
+        // 4. пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅ пїЅ Excel)
         var fourierNum = Math.Round(
             (a * timeEllapsed) / Math.Pow(model.Thickness / 2, 2),
             2);
 
-        // 5. Расчет безразмерных температур (формулы из Excel)
+        // 5. пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ Excel)
         double thetaCenter = Math.Round(
             coefficients.Np * Math.Exp(-coefficients.MuSquared * fourierNum),
             4);
@@ -110,7 +110,7 @@ public class HeatController : Controller
             coefficients.Pp * Math.Exp(-coefficients.MuSquared * fourierNum),
             4);
 
-        // 6. Расчет температур (формулы и округление как в Excel)
+        // 6. пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅ Excel)
         var centerTemperature = Math.Round(
             model.EnvironmentTemperature +
             (model.InitialTemperature - model.EnvironmentTemperature) * thetaCenter,
@@ -145,21 +145,21 @@ public class HeatController : Controller
     [HttpPost] 
     public async Task<IActionResult> InverseProblem(InverseCalculationModel model)
     {
-        // зациклить с шагом по темпе
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
         if (!ModelState.IsValid)
         {
             return View(model);
         }
 
-        // 1. Расчет коэффициента температуропроводности
+        // 1. пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         double a = model.ThermalConductivity / (model.Density * model.HeatCapacity);
 
-        // 2. Расчет числа Био
+        // 2. пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ
         model.BiotNumber = Math.Round(
             (model.HeatTransferCoefficient * (model.Thickness / 2)) / model.ThermalConductivity,
             2);
 
-        // 3. Получение коэффициентов
+        // 3. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         var coefficients = await _dbAccessService.GetCoefficients(model.BiotNumber);
 
         var tempStep = (model.InitialTemperature - model.TargetTemperature) / model.TempPoints;
@@ -178,15 +178,15 @@ public class HeatController : Controller
         model.FourierNumber = dataInFinalPoint.FourierNumber;
         model.Time = dataInFinalPoint.TimeStamp;
 
-        // Общая проверка на корректность времени
+        // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         if (double.IsNaN(model.Time) || model.Time <= 0)
         {
-            throw new Exception("Получено некорректное значение времени. Проверьте введенные параметры.");
+            model.WarningMessage = "РџРѕР»СѓС‡РµРЅРѕ РЅРµРєРѕСЂСЂРµРєС‚РЅРѕРµ Р·РЅР°С‡РµРЅРёРµ РІСЂРµРјРµРЅРё. РџСЂРѕРІРµСЂСЊС‚Рµ РІРІРµРґРµРЅРЅС‹Рµ РїР°СЂР°РјРµС‚СЂС‹.";
         }
 
         if (model.FourierNumber <= 0.3)
         {
-            // ModelState.AddModelError("", "Ошибка: получены некорректные результаты расчета. Проверьте введенные параметры.");
+            // ModelState.AddModelError("", "пїЅпїЅпїЅпїЅпїЅпїЅ: пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.");
             return View(model);
         }
 
@@ -196,18 +196,18 @@ public class HeatController : Controller
 
     private InverseDiagramData CountWithinTemp(InverseCalculationModel model, double a, BioCoeff coefficients, double temp)
     {
-        // 4. Расчет безразмерной температуры
+        // 4. пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         double thetaCenter = (model.EnvironmentTemperature - temp) /
                            (model.EnvironmentTemperature - model.InitialTemperature);
 
         var log = Math.Log(thetaCenter / coefficients.Np);
 
-        // 5. Расчет числа Фурье
+        // 5. пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
         var fourier = Math.Round(
             (1 / -coefficients.MuSquared) * Math.Log(thetaCenter / coefficients.Np),
             2);
 
-        // 6. Расчет времени
+        // 6. пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         var time = (fourier * Math.Pow(model.Thickness / 2, 2)) / a;
 
         return new InverseDiagramData()
