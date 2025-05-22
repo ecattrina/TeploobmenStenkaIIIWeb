@@ -42,6 +42,7 @@ public class HeatController : Controller
             || desiredTimeInterval < minTimeInterval
             || desiredTimeInterval > endTimeSeconds)
         {
+            model.WarningMessage = $"Неверно выбран временной интервал среза: {desiredTimeInterval} секунд. Допустимый интервал: {Math.Round(minTimeInterval, 0)} - {endTimeSeconds} секунд.";
             return View(model);
         }
         // 1. ������ ������������ ���������������������� (��� � Excel)
@@ -182,6 +183,7 @@ public class HeatController : Controller
         if (double.IsNaN(model.Time) || model.Time <= 0)
         {
             model.WarningMessage = "Получено некорректное значение времени. Проверьте введенные параметры.";
+            return View(model);
         }
 
         if (model.FourierNumber <= 0.3)

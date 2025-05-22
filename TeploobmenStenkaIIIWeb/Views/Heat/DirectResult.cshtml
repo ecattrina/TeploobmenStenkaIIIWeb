@@ -13,15 +13,16 @@
                 <div class="card shadow-lg mb-4">
                     <div class="card-body p-5">
                         <div asp-validation-summary="All" class="text-danger"></div>
-                        @if (Model.FourierNumber <= 0 ||
-                            double.IsNaN(Model.CenterTemperature) ||
-                            double.IsNaN(Model.AverageTemperature) ||
-                            double.IsNaN(Model.SurfaceTemperature))
+                        @if (Model.WarningMessage != null
+                            || Model.FourierNumber <= 0
+                            || double.IsNaN(Model.CenterTemperature) 
+                            || double.IsNaN(Model.AverageTemperature) 
+                            || double.IsNaN(Model.SurfaceTemperature))
                         {
                             <div class="alert alert-danger d-flex align-items-center" role="alert">
                                 <i class="bi bi-exclamation-triangle-fill me-2"></i>
                                 <div>
-                                    Введены некорректные параметры. Проверьте значения и попробуйте снова.
+                                    @Model.WarningMessage
                                 </div>
                             </div>
                             <a asp-action="DirectProblem" class="btn btn-primary btn-lg mt-3">

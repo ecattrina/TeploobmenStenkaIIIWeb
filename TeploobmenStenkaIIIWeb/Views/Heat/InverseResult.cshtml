@@ -19,7 +19,7 @@
                                 <div>@Model.WarningMessage</div>
                             </div>
                         }
-                        @if (Model.FourierNumber <= 0.3 || double.IsNaN(Model.Time))
+                        else if (Model.FourierNumber <= 0.3 || double.IsNaN(Model.Time))
                         {
                             <div class="alert alert-danger d-flex align-items-center" role="alert">
                                 <i class="bi bi-exclamation-triangle-fill me-2"></i>

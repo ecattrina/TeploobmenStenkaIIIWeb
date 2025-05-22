@@ -13,10 +13,11 @@
             <div class="col-md-8">
                 <div class="card shadow-lg mb-4">
                     <div class="card-body p-5">
-                        @if (!ViewData.ModelState.IsValid)
+                        @if (!ViewData.ModelState.IsValid
+                            || Model.WarningMessage != null)
                         {
                             <div class="alert alert-danger">
-                                <strong>Ошибка:</strong> @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+                                <strong>Ошибка:</strong> @Model.WarningMessage
                             </div>
                         }
                         <form asp-action="InverseProblem" method="post">
