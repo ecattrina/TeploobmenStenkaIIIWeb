@@ -93,37 +93,33 @@ public class HeatController : Controller
         DirectCalculationModel model, double a, 
         BioCoeff coefficients, double timeEllapsed)
     {
-        // 4. ������ ����� ����� (��� � Excel)
-        var fourierNum = Math.Round(
-            (a * timeEllapsed) / Math.Pow(model.Thickness / 2, 2),
-            2);
+        // Если t=0, все температуры равны начальной
+        if (timeEllapsed == 0)
+        {
+            return new DirectDiagramData
+            {
+                FourierNumber = 0,
+                CenterTemp = model.InitialTemperature,
+                AverageTemp = model.InitialTemperature,
+                SurfaceTemp = model.InitialTemperature,
+                TimeStamp = 0
+            };
+        }
+        // 4. Число Фурье (без округления)
+        var fourierNum = (a * timeEllapsed) / Math.Pow(model.Thickness / 2, 2);
 
-        // 5. ������ ������������ ���������� (������� �� Excel)
-        double thetaCenter = Math.Round(
-            coefficients.Np * Math.Exp(-coefficients.MuSquared * fourierNum),
-            4);
+        // 5. Безразмерные температуры (без округления)
+        double thetaCenter = coefficients.Np * Math.Exp(-coefficients.MuSquared * fourierNum);
+        double thetaAverage = coefficients.M * Math.Exp(-coefficients.MuSquared * fourierNum);
+        double thetaSurface = coefficients.Pp * Math.Exp(-coefficients.MuSquared * fourierNum);
 
-        double thetaAverage = Math.Round(
-            coefficients.M * Math.Exp(-coefficients.MuSquared * fourierNum),
-            4);
-
-        double thetaSurface = Math.Round(
-            coefficients.Pp * Math.Exp(-coefficients.MuSquared * fourierNum),
-            4);
-
-        // 6. ������ ���������� (������� � ���������� ��� � Excel)
-        var centerTemperature = Math.Round(
-            model.EnvironmentTemperature +
-            (model.InitialTemperature - model.EnvironmentTemperature) * thetaCenter,
-            0);
-        var averageTemperature = Math.Round(
-            model.EnvironmentTemperature +
-            (model.InitialTemperature - model.EnvironmentTemperature) * thetaAverage,
-            0);
-        var surfaceTemperature = Math.Round(
-            model.EnvironmentTemperature +
-            (model.InitialTemperature - model.EnvironmentTemperature) * thetaSurface,
-            0);
+        // 6. Температуры (округлять только для вывода)
+        var centerTemperature = model.EnvironmentTemperature +
+            (model.InitialTemperature - model.EnvironmentTemperature) * thetaCenter;
+        var averageTemperature = model.EnvironmentTemperature +
+            (model.InitialTemperature - model.EnvironmentTemperature) * thetaAverage;
+        var surfaceTemperature = model.EnvironmentTemperature +
+            (model.InitialTemperature - model.EnvironmentTemperature) * thetaSurface;
 
         var diagramData = new DirectDiagramData
         {
