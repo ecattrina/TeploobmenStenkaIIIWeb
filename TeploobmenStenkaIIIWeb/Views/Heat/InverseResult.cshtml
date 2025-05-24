@@ -101,15 +101,10 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @foreach (var data in Model.DiagramData.Skip(1))
+                                            @foreach (var data in Model.DiagramData)
                                             {
                                                 <tr>
-                                                    <td>
-                                                        @{
-                                                            var momentTs = TimeSpan.FromSeconds(data.TimeStamp);
-                                                            @($"{momentTs.Hours} ч {momentTs.Minutes} мин")
-                                                        }
-                                                    </td>
+                                                    <td>@data.TimeStamp.ToString("F0")</td>
                                                     <td>@data.CenterTemp.ToString("F2")</td>
                                                 </tr>
                                             }
@@ -121,7 +116,7 @@
                             <div class="row mt-4">
                                 <div class="col-md-12">
                                     <h4>График зависимости температуры от времени</h4>
-                                    <canvas id="temperatureChart"></canvas>
+                                    <div id="plotlyChart" style="width:100%;height:400px;"></div>
                                 </div>
                             </div>
                         }
@@ -137,55 +132,30 @@
 </div>
 
 @section Scripts {
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const ctx = document.getElementById('temperatureChart').getContext('2d');
-            const data = @Html.Raw(Json.Serialize(Model.DiagramData.Skip(1).Select(d => new { 
-                time = d.TimeStamp,
-                temp = d.CenterTemp 
+            const data = @Html.Raw(Json.Serialize(Model.DiagramData.Select(d => new { 
+                x = d.TimeStamp,
+                y = d.CenterTemp 
             })));
 
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: data.map(d => {
-                        const hours = Math.floor(d.time / 3600);
-                        const minutes = Math.floor((d.time % 3600) / 60);
-                        return `${hours} ч ${minutes} мин`;
-                    }),
-                    datasets: [{
-                        label: 'Температура в центре, °C',
-                        data: data.map(d => d.temp),
-                        borderColor: 'rgb(75, 192, 192)',
-                        tension: 0.1,
-                        fill: false
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Зависимость температуры от времени'
-                        }
-                    },
-                    scales: {
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'Температура, °C'
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Время'
-                            }
-                        }
-                    }
-                }
-            });
+            const trace = {
+                x: data.map(d => d.x),
+                y: data.map(d => d.y),
+                mode: 'lines+markers',
+                type: 'scatter',
+                marker: { size: 8, color: 'rgb(75,192,192)' },
+                line: { color: 'rgb(75,192,192)', width: 2 }
+            };
+
+            const layout = {
+                title: 'Зависимость температуры от времени',
+                xaxis: { title: 'Время, с' },
+                yaxis: { title: 'Температура, °C' }
+            };
+
+            Plotly.newPlot('plotlyChart', [trace], layout, {responsive: true});
         });
     </script>
 }

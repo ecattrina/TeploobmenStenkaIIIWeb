@@ -146,40 +146,52 @@ public class HeatController : Controller
     [HttpPost] 
     public async Task<IActionResult> InverseProblem(InverseCalculationModel model)
     {
-        // ��������� � ����� �� �����
+        // Проверка на валидность
         if (!ModelState.IsValid)
         {
             return View(model);
         }
 
-        // 1. ������ ������������ ����������������������
+        // 1. Расчет коэффициента температуропроводности
         double a = model.ThermalConductivity / (model.Density * model.HeatCapacity);
 
-        // 2. ������ ����� ���
+        // 2. Расчет числа Био
         model.BiotNumber = Math.Round(
             (model.HeatTransferCoefficient * (model.Thickness / 2)) / model.ThermalConductivity,
             2);
 
-        // 3. ��������� �������������
+        // 3. Получение коэффициентов
         var coefficients = await _dbAccessService.GetCoefficients(model.BiotNumber);
 
-        var tempStep = (model.InitialTemperature - model.TargetTemperature) / model.TempPoints;
-        var iteration = 0;
-        do
+        // Новый расчет: шаги по температуре с учетом направления
+        int direction = Math.Sign(model.TargetTemperature - model.InitialTemperature);
+        double tempDiff = Math.Abs(model.TargetTemperature - model.InitialTemperature);
+        int pointsCount = (int)model.TempPoints;
+        double stepSize = tempDiff / (pointsCount - 1);
+
+        model.DiagramData.Clear();
+        for (int i = 0; i < pointsCount; i++)
         {
-            var temp = model.InitialTemperature - (iteration * tempStep);
-            var diagramData = CountWithinTemp(model, a, coefficients, temp);
+            double currentTemp = model.InitialTemperature + direction * i * stepSize;
+            if (i == 0)
+            {
+                model.DiagramData.Add(new InverseDiagramData
+                {
+                    TimeStamp = 0,
+                    CenterTemp = currentTemp,
+                    FourierNumber = 0
+                });
+            }
+            else
+            {
+                var diagramData = CountWithinTemp(model, a, coefficients, currentTemp);
+                model.DiagramData.Add(diagramData);
+            }
+        }
+        model.FourierNumber = model.DiagramData.Last().FourierNumber;
+        model.Time = model.DiagramData.Last().TimeStamp;
 
-            model.DiagramData.Add(diagramData);
-
-        } while ((++iteration) <= model.TempPoints);
-
-        var dataInFinalPoint = CountWithinTemp(model, a, coefficients, model.TargetTemperature);
-
-        model.FourierNumber = dataInFinalPoint.FourierNumber;
-        model.Time = dataInFinalPoint.TimeStamp;
-
-        // ����� �������� �� ������������ �������
+        // Проверка на корректность результата
         if (double.IsNaN(model.Time) || model.Time <= 0)
         {
             model.WarningMessage = "Получено некорректное значение времени. Проверьте введенные параметры.";
@@ -188,12 +200,10 @@ public class HeatController : Controller
 
         if (model.FourierNumber <= 0.3)
         {
-            // ModelState.AddModelError("", "������: �������� ������������ ���������� �������. ��������� ��������� ���������.");
             return View(model);
         }
 
         return View("InverseResult", model);
-
     }
 
     private InverseDiagramData CountWithinTemp(InverseCalculationModel model, double a, BioCoeff coefficients, double temp)
