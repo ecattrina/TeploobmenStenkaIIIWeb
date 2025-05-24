@@ -40,8 +40,8 @@ namespace TeploobmenStenkaIIIWeb.Models.InputModels.Inverse
         public double TargetTemperature { get; set; }  // °C
 
         [Required(ErrorMessage = "Поле обязательно для заполнения")]
-        [Range(2, 10, ErrorMessage = "Допускается от 2 до 10 точек среза")]
-        public double TempPoints {  get; set; } 
+        [Range(2, 1000, ErrorMessage = "Допускается от 2 до 1000 точек среза")]
+        public double TempPoints {  get; set; }
 
         // Результаты
 

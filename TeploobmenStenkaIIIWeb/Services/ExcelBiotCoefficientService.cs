@@ -82,5 +82,10 @@ namespace TeploobmenStenkaIIIWeb.Services
                    ?? throw new Exception($"Коэффициенты для Bi={biValue} не найдены");
 
         }
+
+        public IQueryable<BioCoeff> GetAllCoefficients()
+        {
+            return _dbContext.BioCoeffs;
+        }
     }
 }
